@@ -19,7 +19,7 @@ INCREMENT = 5
 FLOW_MAX = 1090.0
 FLOW_LOW = 450.0
 ON = True
-OFf = False
+OFF = False
 
 class DutyCycleManager():
     current_output = 0
@@ -28,6 +28,7 @@ class DutyCycleManager():
     cycle_time = 30
     flowrate = 0
     pwm_object = None
+    status = OFF
 
     def __init__(self, high=FLOW_MAX, low=FLOW_LOW):
         high = high
@@ -42,38 +43,42 @@ class DutyCycleManager():
     def get_cycle(self):
         return self.current_output
 
-    def set_cycle(self, value):
+    def set_cycle(self, app, value):
+        app.logger.error(f"Setting cval to {self.calc_power(value)}")
         if value < self.low:
             value = self.low
         elif value > self.high:
             value = self.high
-            self.current_output = value
+        self.current_output = self.calc_power(value)
+        app.logger.error(f"CVAL is {self.current_output}")
 
     def calc_power(self, flowrate):
         if flowrate < self.low:
             flowrate = self.low
-            if flowrate > self.high:
-                flowrate = self.high
+            self.calc_cycle_power(flowrate)
+        elif flowrate > self.high:
+            flowrate = self.high
+            self.current_output = (4.76e-5 * pow(flowrate, 2)) + (3.85e-2 * flowrate) + 1.14
 
-        self.duty_cycle = (4.76e-5 * pow(flowrate, 2)) + (3.85e-2 * flowrate) + 1.14
-        return self.duty_cycle
+        return self.current_output
 
+
+    def on_cycle(self):
+        return self.flowrate / self.low * self.cycle_time
+
+    def off_cycle(self):
+        return (1 - self.flowrate / self.low) * self.cycle_time
     def calc_cycle_power(self, flowrate):
         self.status = ON
         print(f"Starting cycle for flowrate: {flowrate}")
-
-        def on_cycle(self):
-            return self.flowrate / self.low * self.cycle_time
-
-        def off_cycle(self):
-            return (1 - self.flowrate / self.low) * self.cycle_time
-        print(f"Cycle is {on}")
-        to_stop = on_cycle() if on else off_cycle()
+        print(f"Cycle is {'ON' if self.status == ON else 'OFF'}")
+        to_stop = self.on_cycle() if self.status else self.off_cycle()
         print(f"Waitinf for  {to_stop}")
-        pwm_object.ChangeDutyCycle(calc_power(FLOW_LOW) if on else 0)
-        print(f"Setting duty cycle to {calc_power(FLOW_LOW)}")
+        power = self.calc_power(self.low) if self.status else 0
+        self.pwm_object.ChangeDutyCycle(self.current_output)
+        print(f"Setting duty cycle to {self.calc_power(self.current_output)}")
         time.sleep(to_stop)
-        on = not on
+        self.status = not self.status
 
 
     def loop(self):
@@ -82,7 +87,7 @@ class DutyCycleManager():
             while True:
                 val = float(input("Flow Rate: "))
                 if val <= FLOW_LOW:
-                    calc_cycle_power(p, val)
+                    calc_cycle_power(val)
 
             dc = self.calc_power(val)
             print(dc)

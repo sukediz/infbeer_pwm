@@ -20,21 +20,16 @@ dc = DutyCycleManager()
 
 @app.route('/', methods=["GET", "POST"])
 def index():
-    form = DutyCycleForm()
+    curr_dc = dc.get_cycle()
+    form = DutyCycleForm(cycle=dc.get_cycle())
     if request.method == 'POST':
-        dc.set_cycle(int(request.form.get('cycle')))
-        d = {
-            "duty_cycle": dc.get_cycle()
-        }
-        return f"<h1>{d['duty_cycle']}</h1>"
-        #return render_template("dutycycle.html", form=form, **d)
-    else:
-        #GET
-        d = {
-            "duty_cycle": dc.get_cycle()
-        }
-        return f"{d['duty_cycle']}"
-        #return render_template("dutycycle.html", form=form, **d)
+        app.logger.error(request.form.get('cycle'))
+        dc.set_cycle(app, int(request.form.get('cycle')))
+        app.logger.error(dc.get_cycle())
+    d = {
+        "duty_cycle": curr_dc
+    }
+    return render_template("dutycycle.html", form=form, **d)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
