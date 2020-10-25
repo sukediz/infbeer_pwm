@@ -1,0 +1,12 @@
+<html>
+    <head>
+        <title>Duty Cycle Manager</title>
+    </head>
+    <body>
+	<h1>Current Duty Cycle: <span>{{ duty_cycle }}</span></h1>
+        <form action="{{ url_for('index') }}" method="post">
+            <input type="numeric" name="cycle" />
+        </form>
+    </body>
+</html>
+
