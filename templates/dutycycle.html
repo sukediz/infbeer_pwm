@@ -1,0 +1,14 @@
+<html>
+    <head>
+        <title>Duty Cycle Manager</title>
+    </head>
+    <body>
+	<h1>Current Duty Cycle: <span>{{ duty_cycle }}</span></h1>
+        <form action="{{ url_for('index') }}" method="post">
+	    {{ form.hidden_tag() }}
+	    {{ form.cycle.label }} {{ form.cycle(size=3) }}
+	    <input type="submit" value="Go">
+        </form>
+    </body>
+</html>
+
